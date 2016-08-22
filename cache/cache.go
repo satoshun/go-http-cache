@@ -37,10 +37,18 @@ type HttpCacheClient struct {
 	*http.Client
 }
 
+var DefaultClient = HttpCacheClient{http.DefaultClient}
+
 func NewHttpCacheClient(c *http.Client) *HttpCacheClient {
-	return &HttpCacheClient{
-		c,
+	return &HttpCacheClient{Client: c}
+}
+
+func GetWithCache(url string) (resp *Response, err error) {
+	r, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
 	}
+	return DefaultClient.DoWithCache(r)
 }
 
 func (client *HttpCacheClient) DoWithCache(req *http.Request) (*Response, error) {

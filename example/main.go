@@ -39,22 +39,14 @@ func testEtagLastModified() {
 
 func testExpires() {
 	u := "https://www.google.com/textinputassistant/tia.png"
-	client := &http.Client{}
-	c := cache.NewHttpCacheClient(client)
 
-	r, err := http.NewRequest("GET", u, nil)
-	if err != nil {
-		panic(err)
-	}
-	r.Header.Add("hoge", "fuga")
-
-	res, err := c.DoWithCache(r)
+	res, err := cache.GetWithCache(u)
 	if err != nil || res.StatusCode != http.StatusOK {
 		panic(err)
 	}
 
 	// Use cached body
-	res2, err := c.DoWithCache(r)
+	res2, err := cache.GetWithCache(u)
 	if err != nil || res2.Response != nil {
 		panic(err)
 	}
