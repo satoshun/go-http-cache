@@ -1,6 +1,6 @@
 # HTTP Cache for Go
 
-Reuse contents on Etag, Last-Modified and Expires.
+Reuse response body on Etag, Last-Modified and Expires.
 
 
 ## Usage
@@ -9,7 +9,7 @@ Reuse contents on Etag, Last-Modified and Expires.
 client := &http.Client{}
 c := cache.NewHttpCacheClient(client)
 r, _ := http.NewRequest("GET", <url>, nil)
-res, body, err := c.DoWithCache(r)
+res, err := c.DoWithCache(r)
 ```
 
 more detail [example/main.go].
