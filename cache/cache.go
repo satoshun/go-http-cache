@@ -11,6 +11,20 @@ import (
 	"time"
 )
 
+const KeySize = md5.Size
+
+var (
+	cache map[[KeySize]byte]httpCache
+	m     sync.RWMutex
+)
+
+// Response embed http.Response and Cache data
+type Response struct {
+	*http.Response
+
+	Cache []byte
+}
+
 type httpCache struct {
 	body []byte
 
@@ -18,13 +32,6 @@ type httpCache struct {
 	lastModified string
 	expires      *time.Time
 }
-
-const KeySize = md5.Size
-
-var (
-	cache map[[KeySize]byte]httpCache
-	m     sync.RWMutex
-)
 
 type HttpCacheClient struct {
 	*http.Client
@@ -36,14 +43,14 @@ func NewHttpCacheClient(c *http.Client) *HttpCacheClient {
 	}
 }
 
-func (client *HttpCacheClient) DoWithCache(req *http.Request) (*http.Response, []byte, error) {
+func (client *HttpCacheClient) DoWithCache(req *http.Request) (*Response, error) {
 	key := standardKey(req)
 
 	m.RLock()
 	c, ok := cache[key]
 	if ok {
 		if c.expires != nil && c.expires.After(time.Now()) {
-			return nil, c.body, nil
+			return &Response{Cache: c.body}, nil
 		}
 		if c.etag != "" {
 			req.Header.Set("If-None-Match", c.etag)
@@ -56,10 +63,10 @@ func (client *HttpCacheClient) DoWithCache(req *http.Request) (*http.Response, [
 
 	res, err := client.Client.Do(req)
 	if err != nil {
-		return res, nil, err
+		return &Response{Response: res}, err
 	}
 	if res.StatusCode == http.StatusNotModified {
-		return res, c.body, nil
+		return &Response{Response: res, Cache: c.body}, nil
 	}
 
 	lm := res.Header.Get("Last-Modified")
@@ -67,7 +74,7 @@ func (client *HttpCacheClient) DoWithCache(req *http.Request) (*http.Response, [
 	expires := res.Header.Get("Expires")
 	iee := isEmptyExpires(expires)
 	if lm == "" && etag == "" && iee {
-		return res, nil, err
+		return &Response{Response: res}, err
 	}
 
 	var ed *time.Time
@@ -83,7 +90,7 @@ func (client *HttpCacheClient) DoWithCache(req *http.Request) (*http.Response, [
 	cache[key] = httpCache{body: body, lastModified: lm, etag: etag, expires: ed}
 	m.Unlock()
 
-	return res, body, err
+	return &Response{Response: res, Cache: body}, err
 }
 
 func isEmptyExpires(expires string) bool {

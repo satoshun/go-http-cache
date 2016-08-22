@@ -22,19 +22,19 @@ func testEtagLastModified() {
 		panic(err)
 	}
 
-	res, _, err := c.DoWithCache(r)
+	res, err := c.DoWithCache(r)
 	if res.StatusCode != http.StatusOK || err != nil {
 		panic(err)
 	}
 
 	// Use cached body
-	res2, body, err := c.DoWithCache(r)
+	res2, err := c.DoWithCache(r)
 	if res2.StatusCode != http.StatusNotModified || err != nil {
 		panic(err)
 	}
 
 	// reuse body!
-	fmt.Println(body)
+	fmt.Println(res2.Cache)
 }
 
 func testExpires() {
@@ -48,17 +48,17 @@ func testExpires() {
 	}
 	r.Header.Add("hoge", "fuga")
 
-	res, _, err := c.DoWithCache(r)
+	res, err := c.DoWithCache(r)
 	if err != nil || res.StatusCode != http.StatusOK {
 		panic(err)
 	}
 
 	// Use cached body
-	res2, body, err := c.DoWithCache(r)
-	if err != nil || res2 != nil {
+	res2, err := c.DoWithCache(r)
+	if err != nil || res2.Response != nil {
 		panic(err)
 	}
 
 	// reuse body!
-	fmt.Println(body)
+	fmt.Println(res2.Cache)
 }
