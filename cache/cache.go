@@ -78,7 +78,7 @@ func (client *HttpCacheClient) DoWithCache(req *http.Request) (*Response, error)
 	}
 
 	lm := res.Header.Get("Last-Modified")
-	etag := res.Header.Get("Etag")
+	etag := res.Header.Get("ETag")
 	expires := res.Header.Get("Expires")
 	iee := isEmptyExpires(expires)
 	if lm == "" && etag == "" && iee {
