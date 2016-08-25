@@ -13,8 +13,8 @@ var mc = memcache.New("127.0.0.1:11211")
 type MemcacheRegistry struct {
 }
 
-func (r *MemcacheRegistry) Get(key string) (*cache.HttpCache, error) {
-	it, err := mc.Get(key)
+func (r *MemcacheRegistry) Get(key []byte) (*cache.HttpCache, error) {
+	it, err := mc.Get(string(key))
 	if err != nil {
 		return nil, err
 	}
@@ -26,13 +26,13 @@ func (r *MemcacheRegistry) Get(key string) (*cache.HttpCache, error) {
 	return &v, nil
 }
 
-func (r *MemcacheRegistry) Save(key string, h *cache.HttpCache) error {
+func (r *MemcacheRegistry) Save(key []byte, h *cache.HttpCache) error {
 	v, err := json.Marshal(&h)
 	if err != nil {
 		return err
 	}
 	err = mc.Set(&memcache.Item{
-		Key:   key,
+		Key:   string(key),
 		Value: v,
 	})
 	return err

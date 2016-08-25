@@ -13,9 +13,9 @@ import (
 )
 
 type Registry interface {
-	Get(key string) (*HttpCache, error)
+	Get(key []byte) (*HttpCache, error)
 
-	Save(key string, h *HttpCache) error
+	Save(key []byte, h *HttpCache) error
 }
 
 type MemoryRegistry struct {
@@ -23,17 +23,17 @@ type MemoryRegistry struct {
 	cache map[string]HttpCache
 }
 
-func (r *MemoryRegistry) Get(key string) (*HttpCache, error) {
+func (r *MemoryRegistry) Get(key []byte) (*HttpCache, error) {
 	r.m.RLock()
 	defer r.m.RUnlock()
-	c, _ := r.cache[key]
+	c, _ := r.cache[string(key)]
 	return &c, nil
 }
 
-func (r *MemoryRegistry) Save(key string, h *HttpCache) error {
+func (r *MemoryRegistry) Save(key []byte, h *HttpCache) error {
 	r.m.Lock()
 	defer r.m.Unlock()
-	r.cache[key] = *h
+	r.cache[string(key)] = *h
 
 	return nil
 }
@@ -130,7 +130,7 @@ func isEmptyExpires(expires string) bool {
 	return expires == "" || expires == "-1" || expires == "0"
 }
 
-func standardKey(req *http.Request) string {
+func standardKey(req *http.Request) []byte {
 	headers := make([]string, 0, len(req.Header))
 	for k, vv := range req.Header {
 		for _, v := range vv {
@@ -142,5 +142,5 @@ func standardKey(req *http.Request) string {
 	h := md5.New()
 	io.WriteString(h, u)
 	b := fmt.Sprintf("%x", h.Sum(nil))
-	return string(b)
+	return []byte(b)
 }
