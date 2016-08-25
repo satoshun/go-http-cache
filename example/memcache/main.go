@@ -3,11 +3,11 @@ package main
 import (
 	"fmt"
 	"net/http"
-
-	cache "github.com/satoshun/go-http-cache/cache"
 )
 
 func main() {
+	mc.FlushAll()
+
 	testEtagLastModified()
 	testExpires()
 }
@@ -15,7 +15,7 @@ func main() {
 func testEtagLastModified() {
 	u := "https://www.google.co.jp/images/nav_logo242.png"
 	client := &http.Client{}
-	c := cache.NewHttpCacheClient(client)
+	c := NewMemcacheClient(client)
 
 	r, err := http.NewRequest("GET", u, nil)
 	if err != nil {
@@ -39,14 +39,16 @@ func testEtagLastModified() {
 
 func testExpires() {
 	u := "https://www.google.com/textinputassistant/tia.png"
+	client := &http.Client{}
+	c := NewMemcacheClient(client)
 
-	res, err := cache.GetWithCache(u)
+	res, err := c.GetWithCache(u)
 	if err != nil || res.StatusCode != http.StatusOK {
 		panic(err)
 	}
 
 	// Use cached body
-	res, err = cache.GetWithCache(u)
+	res, err = c.GetWithCache(u)
 	if err != nil || res.Response != nil {
 		panic(err)
 	}

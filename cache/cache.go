@@ -2,6 +2,7 @@ package cache
 
 import (
 	"crypto/md5"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -11,27 +12,25 @@ import (
 	"time"
 )
 
-const KeySize = md5.Size
-
 type Registry interface {
-	Get(key [KeySize]byte) (*httpCache, error)
+	Get(key string) (*HttpCache, error)
 
-	Save(key [KeySize]byte, h *httpCache) error
+	Save(key string, h *HttpCache) error
 }
 
 type MemoryRegistry struct {
 	m     sync.RWMutex
-	cache map[[KeySize]byte]httpCache
+	cache map[string]HttpCache
 }
 
-func (r *MemoryRegistry) Get(key [KeySize]byte) (*httpCache, error) {
+func (r *MemoryRegistry) Get(key string) (*HttpCache, error) {
 	r.m.RLock()
 	defer r.m.RUnlock()
 	c, _ := r.cache[key]
 	return &c, nil
 }
 
-func (r *MemoryRegistry) Save(key [KeySize]byte, h *httpCache) error {
+func (r *MemoryRegistry) Save(key string, h *HttpCache) error {
 	r.m.Lock()
 	defer r.m.Unlock()
 	r.cache[key] = *h
@@ -46,24 +45,24 @@ type Response struct {
 	Cache []byte
 }
 
-type httpCache struct {
-	body []byte
+type HttpCache struct {
+	Body []byte `json:"body"`
 
-	etag         string
-	lastModified string
-	expires      *time.Time
+	Etag         string     `json:"etag"`
+	LastModified string     `json:"last_modified"`
+	Expires      *time.Time `json:"expires"`
 }
 
 type HttpCacheClient struct {
 	*http.Client
 
-	r Registry
+	R Registry
 }
 
-var DefaultClient = HttpCacheClient{Client: http.DefaultClient, r: &MemoryRegistry{cache: make(map[[KeySize]byte]httpCache)}}
+var DefaultClient = HttpCacheClient{Client: http.DefaultClient, R: &MemoryRegistry{cache: make(map[string]HttpCache)}}
 
-func NewHttpCacheClient(c *http.Client) *HttpCacheClient {
-	return &HttpCacheClient{Client: c, r: &MemoryRegistry{cache: make(map[[KeySize]byte]httpCache)}}
+func NewMemoryCacheClient(c *http.Client) *HttpCacheClient {
+	return &HttpCacheClient{Client: c, R: &MemoryRegistry{cache: make(map[string]HttpCache)}}
 }
 
 func GetWithCache(url string) (resp *Response, err error) {
@@ -85,16 +84,16 @@ func (client *HttpCacheClient) GetWithCache(url string) (*Response, error) {
 func (client *HttpCacheClient) DoWithCache(req *http.Request) (*Response, error) {
 	key := standardKey(req)
 
-	c, _ := client.r.Get(key)
+	c, _ := client.R.Get(key)
 	if c != nil {
-		if c.expires != nil && c.expires.After(time.Now()) {
-			return &Response{Cache: c.body}, nil
+		if c.Expires != nil && c.Expires.After(time.Now()) {
+			return &Response{Cache: c.Body}, nil
 		}
-		if c.etag != "" {
-			req.Header.Set("If-None-Match", c.etag)
+		if c.Etag != "" {
+			req.Header.Set("If-None-Match", c.Etag)
 		}
-		if c.lastModified != "" {
-			req.Header.Set("If-Modified-Since", c.lastModified)
+		if c.LastModified != "" {
+			req.Header.Set("If-Modified-Since", c.LastModified)
 		}
 	}
 
@@ -103,7 +102,7 @@ func (client *HttpCacheClient) DoWithCache(req *http.Request) (*Response, error)
 		return &Response{Response: res}, err
 	}
 	if res.StatusCode == http.StatusNotModified {
-		return &Response{Response: res, Cache: c.body}, nil
+		return &Response{Response: res, Cache: c.Body}, nil
 	}
 
 	lm := res.Header.Get("Last-Modified")
@@ -122,7 +121,7 @@ func (client *HttpCacheClient) DoWithCache(req *http.Request) (*Response, error)
 		}
 	}
 	body, _ := ioutil.ReadAll(res.Body)
-	client.r.Save(key, &httpCache{body: body, lastModified: lm, etag: etag, expires: ed})
+	client.R.Save(key, &HttpCache{Body: body, LastModified: lm, Etag: etag, Expires: ed})
 
 	return &Response{Response: res, Cache: body}, err
 }
@@ -131,7 +130,7 @@ func isEmptyExpires(expires string) bool {
 	return expires == "" || expires == "-1" || expires == "0"
 }
 
-func standardKey(req *http.Request) [KeySize]byte {
+func standardKey(req *http.Request) string {
 	headers := make([]string, 0, len(req.Header))
 	for k, vv := range req.Header {
 		for _, v := range vv {
@@ -142,8 +141,6 @@ func standardKey(req *http.Request) [KeySize]byte {
 	u := req.URL.String() + strings.Join(headers, ";")
 	h := md5.New()
 	io.WriteString(h, u)
-	b := h.Sum(nil)
-	var bb [KeySize]byte
-	copy(bb[:], b[0:KeySize])
-	return bb
+	b := fmt.Sprintf("%x", h.Sum(nil))
+	return string(b)
 }

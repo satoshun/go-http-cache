@@ -7,7 +7,7 @@ Reuse response body on Etag, Last-Modified and Expires.
 
 ```go
 client := &http.Client{}
-c := cache.NewHttpCacheClient(client)
+c := cache.NewMemoryCacheClient(client)
 r, _ := http.NewRequest("GET", <url>, nil)
 res, err := c.DoWithCache(r)
 ```

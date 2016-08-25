@@ -14,13 +14,13 @@ func TestNoHeader(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewHttpCacheClient(&http.Client{})
+	c := NewMemoryCacheClient(&http.Client{})
 	_, err := c.GetWithCache(ts.URL)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	r := c.r.(*MemoryRegistry)
+	r := c.R.(*MemoryRegistry)
 	if len(r.cache) != 0 {
 		t.Fatalf("expect len == 0, but actual %d", len(r.cache))
 	}
@@ -34,27 +34,27 @@ func TestLastModified(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewHttpCacheClient(&http.Client{})
+	c := NewMemoryCacheClient(&http.Client{})
 	_, err := c.GetWithCache(ts.URL)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	r := c.r.(*MemoryRegistry)
+	r := c.R.(*MemoryRegistry)
 	if len(r.cache) != 1 {
 		t.Fatalf("expect len == 1, but actual %d", len(r.cache))
 	}
 	for _, v := range r.cache {
-		if v.body == nil {
+		if v.Body == nil {
 			t.Fatal("body is nil")
 		}
-		if v.lastModified != n {
+		if v.LastModified != n {
 			t.Fatal("lastModified is empty")
 		}
-		if v.etag != "" {
+		if v.Etag != "" {
 			t.Fatal("etag is not empty")
 		}
-		if v.expires != nil {
+		if v.Expires != nil {
 			t.Fatal("expires is not empty")
 		}
 	}
@@ -67,27 +67,27 @@ func TestETag(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewHttpCacheClient(&http.Client{})
+	c := NewMemoryCacheClient(&http.Client{})
 	_, err := c.GetWithCache(ts.URL)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	r := c.r.(*MemoryRegistry)
+	r := c.R.(*MemoryRegistry)
 	if len(r.cache) != 1 {
 		t.Fatalf("expect len == 1, but actual %d", len(r.cache))
 	}
 	for _, v := range r.cache {
-		if v.body == nil {
+		if v.Body == nil {
 			t.Fatal("body is nil")
 		}
-		if v.etag != "0123456789" {
+		if v.Etag != "0123456789" {
 			t.Fatal("etag is empty")
 		}
-		if v.lastModified != "" {
+		if v.LastModified != "" {
 			t.Fatal("lastModified is not empty")
 		}
-		if v.expires != nil {
+		if v.Expires != nil {
 			t.Fatal("expires is not empty")
 		}
 	}
@@ -101,27 +101,27 @@ func TestExpires(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewHttpCacheClient(&http.Client{})
+	c := NewMemoryCacheClient(&http.Client{})
 	_, err := c.GetWithCache(ts.URL)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	r := c.r.(*MemoryRegistry)
+	r := c.R.(*MemoryRegistry)
 	if len(r.cache) != 1 {
 		t.Fatalf("expect len == 1, but actual %d", len(r.cache))
 	}
 	for _, v := range r.cache {
-		if v.body == nil {
+		if v.Body == nil {
 			t.Fatal("body is nil")
 		}
-		if v.etag != "" {
+		if v.Etag != "" {
 			t.Fatal("etag is not empty")
 		}
-		if v.lastModified != "" {
+		if v.LastModified != "" {
 			t.Fatal("lastModified is not empty")
 		}
-		if v.expires == nil {
+		if v.Expires == nil {
 			t.Fatal("expires is empty")
 		}
 	}
