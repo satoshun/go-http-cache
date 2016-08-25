@@ -28,13 +28,13 @@ func testEtagLastModified() {
 	}
 
 	// Use cached body
-	res2, err := c.DoWithCache(r)
-	if res2.StatusCode != http.StatusNotModified || err != nil {
+	res, err = c.DoWithCache(r)
+	if res.StatusCode != http.StatusNotModified || err != nil {
 		panic(err)
 	}
 
 	// reuse body!
-	fmt.Println(res2.Cache)
+	fmt.Println(res.Cache)
 }
 
 func testExpires() {
@@ -46,11 +46,11 @@ func testExpires() {
 	}
 
 	// Use cached body
-	res2, err := cache.GetWithCache(u)
-	if err != nil || res2.Response != nil {
+	res, err = cache.GetWithCache(u)
+	if err != nil || res.Response != nil {
 		panic(err)
 	}
 
 	// reuse body!
-	fmt.Println(res2.Cache)
+	fmt.Println(res.Cache)
 }

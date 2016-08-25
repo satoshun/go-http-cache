@@ -13,10 +13,31 @@ import (
 
 const KeySize = md5.Size
 
-var (
-	cache map[[KeySize]byte]httpCache
+type Registry interface {
+	Get(key [KeySize]byte) (*httpCache, error)
+
+	Save(key [KeySize]byte, h *httpCache) error
+}
+
+type MemoryRegistry struct {
 	m     sync.RWMutex
-)
+	cache map[[KeySize]byte]httpCache
+}
+
+func (r *MemoryRegistry) Get(key [KeySize]byte) (*httpCache, error) {
+	r.m.RLock()
+	defer r.m.RUnlock()
+	c, _ := r.cache[key]
+	return &c, nil
+}
+
+func (r *MemoryRegistry) Save(key [KeySize]byte, h *httpCache) error {
+	r.m.Lock()
+	defer r.m.Unlock()
+	r.cache[key] = *h
+
+	return nil
+}
 
 // Response embed http.Response and Cache data
 type Response struct {
@@ -35,12 +56,14 @@ type httpCache struct {
 
 type HttpCacheClient struct {
 	*http.Client
+
+	r Registry
 }
 
-var DefaultClient = HttpCacheClient{http.DefaultClient}
+var DefaultClient = HttpCacheClient{Client: http.DefaultClient, r: &MemoryRegistry{cache: make(map[[KeySize]byte]httpCache)}}
 
 func NewHttpCacheClient(c *http.Client) *HttpCacheClient {
-	return &HttpCacheClient{Client: c}
+	return &HttpCacheClient{Client: c, r: &MemoryRegistry{cache: make(map[[KeySize]byte]httpCache)}}
 }
 
 func GetWithCache(url string) (resp *Response, err error) {
@@ -51,12 +74,19 @@ func GetWithCache(url string) (resp *Response, err error) {
 	return DefaultClient.DoWithCache(r)
 }
 
+func (client *HttpCacheClient) GetWithCache(url string) (*Response, error) {
+	r, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	return client.DoWithCache(r)
+}
+
 func (client *HttpCacheClient) DoWithCache(req *http.Request) (*Response, error) {
 	key := standardKey(req)
 
-	m.RLock()
-	c, ok := cache[key]
-	if ok {
+	c, _ := client.r.Get(key)
+	if c != nil {
 		if c.expires != nil && c.expires.After(time.Now()) {
 			return &Response{Cache: c.body}, nil
 		}
@@ -67,7 +97,6 @@ func (client *HttpCacheClient) DoWithCache(req *http.Request) (*Response, error)
 			req.Header.Set("If-Modified-Since", c.lastModified)
 		}
 	}
-	m.RUnlock()
 
 	res, err := client.Client.Do(req)
 	if err != nil {
@@ -92,11 +121,8 @@ func (client *HttpCacheClient) DoWithCache(req *http.Request) (*Response, error)
 			ed = &d
 		}
 	}
-
-	m.Lock()
 	body, _ := ioutil.ReadAll(res.Body)
-	cache[key] = httpCache{body: body, lastModified: lm, etag: etag, expires: ed}
-	m.Unlock()
+	client.r.Save(key, &httpCache{body: body, lastModified: lm, etag: etag, expires: ed})
 
 	return &Response{Response: res, Cache: body}, err
 }
@@ -120,8 +146,4 @@ func standardKey(req *http.Request) [KeySize]byte {
 	var bb [KeySize]byte
 	copy(bb[:], b[0:KeySize])
 	return bb
-}
-
-func init() {
-	cache = make(map[[KeySize]byte]httpCache)
 }

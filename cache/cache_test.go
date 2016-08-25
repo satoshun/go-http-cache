@@ -8,28 +8,25 @@ import (
 	"time"
 )
 
-func setUp() {
-	cache = make(map[[KeySize]byte]httpCache)
-}
-
 func TestNoHeader(t *testing.T) {
-	setUp()
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "Hello, client")
 	}))
 	defer ts.Close()
 
-	_, err := GetWithCache(ts.URL)
+	c := NewHttpCacheClient(&http.Client{})
+	_, err := c.GetWithCache(ts.URL)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(cache) != 0 {
-		t.Fatalf("expect len == 0, but actual %d", len(cache))
+
+	r := c.r.(*MemoryRegistry)
+	if len(r.cache) != 0 {
+		t.Fatalf("expect len == 0, but actual %d", len(r.cache))
 	}
 }
 
 func TestLastModified(t *testing.T) {
-	setUp()
 	n := time.Now().String()
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Last-Modified", n)
@@ -37,14 +34,17 @@ func TestLastModified(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	_, err := GetWithCache(ts.URL)
+	c := NewHttpCacheClient(&http.Client{})
+	_, err := c.GetWithCache(ts.URL)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(cache) != 1 {
-		t.Fatalf("expect len == 1, but actual %d", len(cache))
+
+	r := c.r.(*MemoryRegistry)
+	if len(r.cache) != 1 {
+		t.Fatalf("expect len == 1, but actual %d", len(r.cache))
 	}
-	for _, v := range cache {
+	for _, v := range r.cache {
 		if v.body == nil {
 			t.Fatal("body is nil")
 		}
@@ -61,21 +61,23 @@ func TestLastModified(t *testing.T) {
 }
 
 func TestETag(t *testing.T) {
-	setUp()
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("ETag", "0123456789")
 		fmt.Fprint(w, "Hello, client")
 	}))
 	defer ts.Close()
 
-	_, err := GetWithCache(ts.URL)
+	c := NewHttpCacheClient(&http.Client{})
+	_, err := c.GetWithCache(ts.URL)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(cache) != 1 {
-		t.Fatalf("expect len == 1, but actual %d", len(cache))
+
+	r := c.r.(*MemoryRegistry)
+	if len(r.cache) != 1 {
+		t.Fatalf("expect len == 1, but actual %d", len(r.cache))
 	}
-	for _, v := range cache {
+	for _, v := range r.cache {
 		if v.body == nil {
 			t.Fatal("body is nil")
 		}
@@ -92,8 +94,6 @@ func TestETag(t *testing.T) {
 }
 
 func TestExpires(t *testing.T) {
-	setUp()
-
 	n := time.Now().Add(time.Second * 10).Format(time.RFC1123)
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Expires", n)
@@ -101,14 +101,17 @@ func TestExpires(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	_, err := GetWithCache(ts.URL)
+	c := NewHttpCacheClient(&http.Client{})
+	_, err := c.GetWithCache(ts.URL)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(cache) != 1 {
-		t.Fatalf("expect len == 1, but actual %d", len(cache))
+
+	r := c.r.(*MemoryRegistry)
+	if len(r.cache) != 1 {
+		t.Fatalf("expect len == 1, but actual %d", len(r.cache))
 	}
-	for _, v := range cache {
+	for _, v := range r.cache {
 		if v.body == nil {
 			t.Fatal("body is nil")
 		}
@@ -123,12 +126,12 @@ func TestExpires(t *testing.T) {
 		}
 	}
 
-	res, err := GetWithCache(ts.URL)
+	res, err := c.GetWithCache(ts.URL)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(cache) != 1 {
-		t.Fatalf("expect len == 1, but actual %d", len(cache))
+	if len(r.cache) != 1 {
+		t.Fatalf("expect len == 1, but actual %d", len(r.cache))
 	}
 	if string(res.Cache) != "Hello, client" {
 		t.Fatalf("actual: %s", string(res.Cache))
