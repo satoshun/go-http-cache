@@ -25,8 +25,15 @@ type MemoryRegistry struct {
 
 func (r *MemoryRegistry) Get(key []byte) (*HttpCache, error) {
 	r.m.RLock()
-	defer r.m.RUnlock()
 	c, _ := r.cache[string(key)]
+	if c.invalidate() {
+		r.m.RUnlock()
+		r.m.Lock()
+		delete(r.cache, string(key))
+		r.m.Unlock()
+		return nil, nil
+	}
+	r.m.RUnlock()
 	return &c, nil
 }
 
@@ -51,6 +58,16 @@ type HttpCache struct {
 	Etag         string     `json:"etag"`
 	LastModified string     `json:"last_modified"`
 	Expires      *time.Time `json:"expires"`
+}
+
+func (c *HttpCache) invalidate() bool {
+	if c.Etag != "" {
+		return false
+	}
+	if c.LastModified != "" {
+		return false
+	}
+	return c.Expires != nil && c.Expires.Before(time.Now())
 }
 
 type HttpCacheClient struct {
