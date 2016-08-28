@@ -3,7 +3,6 @@ package cache
 import (
 	"crypto/md5"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"sort"
@@ -159,8 +158,6 @@ func standardKey(req *http.Request) []byte {
 	}
 	sort.StringsAreSorted(headers)
 	u := req.URL.String() + strings.Join(headers, ";")
-	h := md5.New()
-	io.WriteString(h, u)
-	b := fmt.Sprintf("%x", h.Sum(nil))
+	b := fmt.Sprintf("%x", md5.Sum([]byte(u)))
 	return []byte(b)
 }
