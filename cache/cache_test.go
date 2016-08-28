@@ -20,7 +20,7 @@ func TestNoHeader(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	r := c.R.(*MemoryRegistry)
+	r := c.r.(*MemoryRegistry)
 	if len(r.cache) != 0 {
 		t.Fatalf("expect len == 0, but actual %d", len(r.cache))
 	}
@@ -40,7 +40,7 @@ func TestLastModified(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	r := c.R.(*MemoryRegistry)
+	r := c.r.(*MemoryRegistry)
 	if len(r.cache) != 1 {
 		t.Fatalf("expect len == 1, but actual %d", len(r.cache))
 	}
@@ -73,7 +73,7 @@ func TestETag(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	r := c.R.(*MemoryRegistry)
+	r := c.r.(*MemoryRegistry)
 	if len(r.cache) != 1 {
 		t.Fatalf("expect len == 1, but actual %d", len(r.cache))
 	}
@@ -107,7 +107,7 @@ func TestExpires(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	r := c.R.(*MemoryRegistry)
+	r := c.r.(*MemoryRegistry)
 	if len(r.cache) != 1 {
 		t.Fatalf("expect len == 1, but actual %d", len(r.cache))
 	}

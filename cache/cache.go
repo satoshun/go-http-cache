@@ -72,13 +72,17 @@ func (c *HttpCache) invalidate() bool {
 type HttpCacheClient struct {
 	*http.Client
 
-	R Registry
+	r Registry
 }
 
-var DefaultClient = HttpCacheClient{Client: http.DefaultClient, R: &MemoryRegistry{cache: make(map[string]HttpCache)}}
+var DefaultClient = HttpCacheClient{Client: http.DefaultClient, r: &MemoryRegistry{cache: make(map[string]HttpCache)}}
 
 func NewMemoryCacheClient(c *http.Client) *HttpCacheClient {
-	return &HttpCacheClient{Client: c, R: &MemoryRegistry{cache: make(map[string]HttpCache)}}
+	return NewClient(c, &MemoryRegistry{cache: make(map[string]HttpCache)})
+}
+
+func NewClient(c *http.Client, r Registry) *HttpCacheClient {
+	return &HttpCacheClient{Client: c, r: r}
 }
 
 func GetWithCache(url string) (resp *Response, err error) {
@@ -100,7 +104,7 @@ func (client *HttpCacheClient) GetWithCache(url string) (*Response, error) {
 func (client *HttpCacheClient) DoWithCache(req *http.Request) (*Response, error) {
 	key := standardKey(req)
 
-	c, _ := client.R.Get(key)
+	c, _ := client.r.Get(key)
 	if c != nil {
 		if c.Expires != nil && c.Expires.After(time.Now()) {
 			return &Response{Cache: c.Body}, nil
@@ -137,7 +141,7 @@ func (client *HttpCacheClient) DoWithCache(req *http.Request) (*Response, error)
 		}
 	}
 	body, _ := ioutil.ReadAll(res.Body)
-	client.R.Save(key, &HttpCache{Body: body, LastModified: lm, Etag: etag, Expires: ed})
+	client.r.Save(key, &HttpCache{Body: body, LastModified: lm, Etag: etag, Expires: ed})
 
 	return &Response{Response: res, Cache: body}, err
 }

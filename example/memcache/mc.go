@@ -39,8 +39,5 @@ func (r *MemcacheRegistry) Save(key []byte, h *cache.HttpCache) error {
 }
 
 func NewMemcacheClient(c *http.Client) *cache.HttpCacheClient {
-	return &cache.HttpCacheClient{
-		Client: c,
-		R:      &MemcacheRegistry{},
-	}
+	return cache.NewClient(c, &MemcacheRegistry{})
 }

@@ -23,7 +23,7 @@ func testEtagLastModified() {
 	}
 
 	res, err := c.DoWithCache(r)
-	if res.StatusCode != http.StatusOK || err != nil {
+	if err != nil || res.StatusCode != http.StatusOK {
 		panic(err)
 	}
 
