@@ -26,14 +26,13 @@ type MemoryRegistry struct {
 func (r *MemoryRegistry) Get(key []byte) (*HttpCache, error) {
 	r.m.RLock()
 	c, _ := r.cache[string(key)]
+	r.m.RUnlock()
 	if c.invalidate() {
-		r.m.RUnlock()
 		r.m.Lock()
 		delete(r.cache, string(key))
 		r.m.Unlock()
 		return nil, nil
 	}
-	r.m.RUnlock()
 	return &c, nil
 }
 
