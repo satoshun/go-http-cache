@@ -2,7 +2,6 @@ package cache
 
 import (
 	"crypto/md5"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"sort"
@@ -158,6 +157,17 @@ func standardKey(req *http.Request) []byte {
 	}
 	sort.StringsAreSorted(headers)
 	u := req.URL.String() + strings.Join(headers, ";")
-	b := fmt.Sprintf("%x", md5.Sum([]byte(u)))
-	return []byte(b)
+	d := md5.Sum([]byte(u))
+	return digest(d[:])
+}
+
+const ldigsts = "0123456789abcdef"
+
+func digest(b []byte) []byte {
+	buf := make([]byte, 0, len(b)*2)
+	for _, c := range b {
+		buf = append(buf, ldigsts[c>>4], ldigsts[c&0x0F])
+	}
+
+	return buf
 }
