@@ -1,12 +1,37 @@
 package cache
 
 import (
+	"bytes"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 )
+
+func TestPackageGetWithCache(t *testing.T) {
+	n := time.Now().Add(time.Second * 10).Format(time.RFC1123)
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Expires", n)
+		fmt.Fprint(w, "Hello, client")
+	}))
+	defer ts.Close()
+
+	resp1, err := GetWithCache(ts.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp2, err := GetWithCache(ts.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp2.Response != nil {
+		t.Fatal("should use cache data on ETag")
+	}
+	if !bytes.Equal(resp1.Cache, resp2.Cache) {
+		t.Fatal("cache is invalid")
+	}
+}
 
 func TestNoHeader(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

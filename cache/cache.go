@@ -84,11 +84,7 @@ func NewClient(c *http.Client, r Registry) *HttpCacheClient {
 }
 
 func GetWithCache(url string) (resp *Response, err error) {
-	r, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return nil, err
-	}
-	return DefaultClient.DoWithCache(r)
+	return DefaultClient.GetWithCache(url)
 }
 
 func (client *HttpCacheClient) GetWithCache(url string) (*Response, error) {
