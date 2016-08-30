@@ -6,41 +6,8 @@ import (
 	"net/http"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 )
-
-type Registry interface {
-	Get(key []byte) (*HttpCache, error)
-
-	Save(key []byte, h *HttpCache) error
-}
-
-type MemoryRegistry struct {
-	m     sync.RWMutex
-	cache map[string]HttpCache
-}
-
-func (r *MemoryRegistry) Get(key []byte) (*HttpCache, error) {
-	r.m.RLock()
-	c, _ := r.cache[string(key)]
-	r.m.RUnlock()
-	if c.invalidate() {
-		r.m.Lock()
-		delete(r.cache, string(key))
-		r.m.Unlock()
-		return nil, nil
-	}
-	return &c, nil
-}
-
-func (r *MemoryRegistry) Save(key []byte, h *HttpCache) error {
-	r.m.Lock()
-	defer r.m.Unlock()
-	r.cache[string(key)] = *h
-
-	return nil
-}
 
 // Response embed http.Response and Cache data
 type Response struct {
@@ -49,6 +16,7 @@ type Response struct {
 	Cache []byte
 }
 
+// HttpCache represents brief HTTP Response data
 type HttpCache struct {
 	Body []byte `json:"body"`
 
@@ -67,26 +35,34 @@ func (c *HttpCache) invalidate() bool {
 	return c.Expires != nil && c.Expires.Before(time.Now())
 }
 
+// HttpCacheClient has http.Client and Registry
 type HttpCacheClient struct {
 	*http.Client
 
 	r Registry
 }
 
-var DefaultClient = &HttpCacheClient{Client: http.DefaultClient, r: &MemoryRegistry{cache: make(map[string]HttpCache)}}
+var DefaultClient = &HttpCacheClient{
+	Client: http.DefaultClient,
+	r:      NewMemoryRegistry(),
+}
 
+// NewMemoryCacheClient returns a new HttpCacheClient from MemoryRegistry
 func NewMemoryCacheClient(c *http.Client) *HttpCacheClient {
 	return NewClient(c, &MemoryRegistry{cache: make(map[string]HttpCache)})
 }
 
+// NewClient returns a new HttpCacheClient
 func NewClient(c *http.Client, r Registry) *HttpCacheClient {
 	return &HttpCacheClient{Client: c, r: r}
 }
 
+// GetWithCache returns a new Response data by HTTP Request or Registry cache
 func GetWithCache(url string) (resp *Response, err error) {
 	return DefaultClient.GetWithCache(url)
 }
 
+// GetWithCache returns a new Response data by HTTP Request or Registry cache
 func (client *HttpCacheClient) GetWithCache(url string) (*Response, error) {
 	r, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -95,6 +71,7 @@ func (client *HttpCacheClient) GetWithCache(url string) (*Response, error) {
 	return client.DoWithCache(r)
 }
 
+// DoWithCache returns a new Response data by HTTP Request or Registry cache
 func (client *HttpCacheClient) DoWithCache(req *http.Request) (*Response, error) {
 	key := standardKey(req)
 
