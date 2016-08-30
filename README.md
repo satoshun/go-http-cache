@@ -12,10 +12,4 @@ r, _ := http.NewRequest("GET", <url>, nil)
 res, err := c.DoWithCache(r)
 ```
 
-more detail [example/main.go].
-
-
-## TODOs
-
-- Implements HttpCacheClient#Get
-- Writes test
+more detail [example/basic/main.go].
