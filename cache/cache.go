@@ -73,7 +73,7 @@ type HttpCacheClient struct {
 	r Registry
 }
 
-var DefaultClient = HttpCacheClient{Client: http.DefaultClient, r: &MemoryRegistry{cache: make(map[string]HttpCache)}}
+var DefaultClient = &HttpCacheClient{Client: http.DefaultClient, r: &MemoryRegistry{cache: make(map[string]HttpCache)}}
 
 func NewMemoryCacheClient(c *http.Client) *HttpCacheClient {
 	return NewClient(c, &MemoryRegistry{cache: make(map[string]HttpCache)})
