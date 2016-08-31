@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	cache "github.com/satoshun/go-http-cache/cache"
+	"github.com/satoshun/go-http-cache/cache"
 )
 
 func main() {
