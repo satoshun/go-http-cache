@@ -25,7 +25,7 @@ func TestPackageGetWithCache(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resp2.Response != nil {
+	if resp2.Response.StatusCode != StatusCacheContent {
 		t.Fatal("should use cache data on ETag")
 	}
 	if !bytes.Equal(resp1.Cache, resp2.Cache) {
