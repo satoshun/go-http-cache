@@ -15,3 +15,19 @@ res, err := c.DoWithCache(r)
 ```
 
 more detail [example/basic/main.go].
+
+
+## bonus
+
+cache checker cmd
+
+```shell
+## install
+go get github.com/satoshun/go-http-cache/cmd/cachestat
+
+## execute
+cachestat https://www.google.co.jp/images/nav_logo242.png https://www.google.com/textinputassistant/tia.png
+
+Not Modified - https://www.google.co.jp/images/nav_logo242.png
+Use Cache - https://www.google.com/textinputassistant/tia.png
+```
