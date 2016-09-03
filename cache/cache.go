@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+const StatusCacheContent = 999
+
 // Response embed http.Response and Cache data
 type Response struct {
 	*http.Response
@@ -78,7 +80,10 @@ func (client *HttpCacheClient) DoWithCache(req *http.Request) (*Response, error)
 	c, _ := client.r.Get(key)
 	if c != nil {
 		if c.Expires != nil && c.Expires.After(time.Now()) {
-			return &Response{Cache: c.Body}, nil
+			return &Response{
+				Response: &http.Response{StatusCode: StatusCacheContent},
+				Cache:    c.Body,
+			}, nil
 		}
 		if c.Etag != "" {
 			req.Header.Set("If-None-Match", c.Etag)
