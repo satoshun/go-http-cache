@@ -18,8 +18,8 @@ type Response struct {
 	Cache []byte
 }
 
-// HttpCache represents brief HTTP Response data
-type HttpCache struct {
+// HTTPCache represents brief HTTP Response data
+type HTTPCache struct {
 	Body []byte `json:"body"`
 
 	Etag         string     `json:"etag"`
@@ -27,7 +27,7 @@ type HttpCache struct {
 	Expires      *time.Time `json:"expires"`
 }
 
-func (c *HttpCache) invalidate() bool {
+func (c *HTTPCache) invalidate() bool {
 	if c.Etag != "" {
 		return false
 	}
@@ -37,26 +37,26 @@ func (c *HttpCache) invalidate() bool {
 	return c.Expires != nil && c.Expires.Before(time.Now())
 }
 
-// HttpCacheClient has http.Client and Registry
-type HttpCacheClient struct {
+// HTTPCacheClient has http.Client and Registry
+type HTTPCacheClient struct {
 	*http.Client
 
 	r Registry
 }
 
-var DefaultClient = &HttpCacheClient{
+var DefaultClient = &HTTPCacheClient{
 	Client: http.DefaultClient,
 	r:      NewMemoryRegistry(),
 }
 
-// NewMemoryCacheClient returns a new HttpCacheClient from MemoryRegistry
-func NewMemoryCacheClient(c *http.Client) *HttpCacheClient {
-	return NewClient(c, &MemoryRegistry{cache: make(map[string]HttpCache)})
+// NewMemoryCacheClient returns a new HTTPCacheClient from MemoryRegistry
+func NewMemoryCacheClient(c *http.Client) *HTTPCacheClient {
+	return NewClient(c, &MemoryRegistry{cache: make(map[string]HTTPCache)})
 }
 
-// NewClient returns a new HttpCacheClient
-func NewClient(c *http.Client, r Registry) *HttpCacheClient {
-	return &HttpCacheClient{Client: c, r: r}
+// NewClient returns a new HTTPCacheClient
+func NewClient(c *http.Client, r Registry) *HTTPCacheClient {
+	return &HTTPCacheClient{Client: c, r: r}
 }
 
 // GetWithCache returns a new Response data by HTTP Request or Registry cache
@@ -65,7 +65,7 @@ func GetWithCache(url string) (resp *Response, err error) {
 }
 
 // GetWithCache returns a new Response data by HTTP Request or Registry cache
-func (client *HttpCacheClient) GetWithCache(url string) (*Response, error) {
+func (client *HTTPCacheClient) GetWithCache(url string) (*Response, error) {
 	r, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -74,7 +74,7 @@ func (client *HttpCacheClient) GetWithCache(url string) (*Response, error) {
 }
 
 // DoWithCache returns a new Response data by HTTP Request or Registry cache
-func (client *HttpCacheClient) DoWithCache(req *http.Request) (*Response, error) {
+func (client *HTTPCacheClient) DoWithCache(req *http.Request) (*Response, error) {
 	key := standardKey(req)
 
 	c, _ := client.r.Get(key)
@@ -93,7 +93,7 @@ func (client *HttpCacheClient) DoWithCache(req *http.Request) (*Response, error)
 		}
 	}
 
-	res, err := client.Client.Do(req)
+	res, err := client.Do(req)
 	if err != nil {
 		return &Response{Response: res}, err
 	}
@@ -117,7 +117,7 @@ func (client *HttpCacheClient) DoWithCache(req *http.Request) (*Response, error)
 		}
 	}
 	body, _ := ioutil.ReadAll(res.Body)
-	client.r.Save(key, &HttpCache{Body: body, LastModified: lm, Etag: etag, Expires: ed})
+	client.r.Save(key, &HTTPCache{Body: body, LastModified: lm, Etag: etag, Expires: ed})
 
 	return &Response{Response: res, Cache: body}, err
 }

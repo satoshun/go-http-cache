@@ -47,7 +47,7 @@ func testExpires() {
 
 	// Use cached body
 	res, err = cache.GetWithCache(u)
-	if err != nil || res.Response != nil {
+	if err != nil || res.StatusCode != cache.StatusCacheContent {
 		panic(err)
 	}
 

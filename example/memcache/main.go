@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/satoshun/go-http-cache/cache"
 )
 
 func main() {
@@ -49,7 +51,7 @@ func testExpires() {
 
 	// Use cached body
 	res, err = c.GetWithCache(u)
-	if err != nil || res.Response != nil {
+	if err != nil || res.StatusCode != cache.StatusCacheContent {
 		panic(err)
 	}
 

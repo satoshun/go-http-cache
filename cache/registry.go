@@ -4,9 +4,9 @@ import "sync"
 
 // Registry stores data
 type Registry interface {
-	Get(key []byte) (*HttpCache, error)
+	Get(key []byte) (*HTTPCache, error)
 
-	Save(key []byte, h *HttpCache) error
+	Save(key []byte, h *HTTPCache) error
 }
 
 // MemoryRegistry stores data on memory, not persistent data
@@ -14,16 +14,16 @@ type Registry interface {
 // implements Registry
 type MemoryRegistry struct {
 	m     sync.RWMutex
-	cache map[string]HttpCache
+	cache map[string]HTTPCache
 }
 
 // NewMemoryRegistry returns a new MemoryRegistry
 func NewMemoryRegistry() *MemoryRegistry {
-	return &MemoryRegistry{cache: make(map[string]HttpCache)}
+	return &MemoryRegistry{cache: make(map[string]HTTPCache)}
 }
 
 // Get gets data from memory cache
-func (r *MemoryRegistry) Get(key []byte) (*HttpCache, error) {
+func (r *MemoryRegistry) Get(key []byte) (*HTTPCache, error) {
 	r.m.RLock()
 	c, _ := r.cache[string(key)]
 	r.m.RUnlock()
@@ -37,7 +37,7 @@ func (r *MemoryRegistry) Get(key []byte) (*HttpCache, error) {
 }
 
 // Save saves data to memory cache
-func (r *MemoryRegistry) Save(key []byte, h *HttpCache) error {
+func (r *MemoryRegistry) Save(key []byte, h *HTTPCache) error {
 	r.m.Lock()
 	defer r.m.Unlock()
 	r.cache[string(key)] = *h
