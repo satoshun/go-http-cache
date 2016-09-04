@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -101,19 +102,44 @@ func (client *HTTPCacheClient) DoWithCache(req *http.Request) (*Response, error)
 		return &Response{Response: res, Cache: c.Body}, nil
 	}
 
+	cc := res.Header.Get("Cache-Control")
+	var cci int
+	if cc != "" {
+		i := strings.Index(cc, "max-age=")
+		if i != -1 {
+			i += 8
+			j := i + 1
+			for ; j < len(cc); j++ {
+				if cc[j] >= '0' && cc[j] <= '9' {
+					continue
+				}
+				break
+			}
+			cci, _ = strconv.Atoi(cc[i:j])
+		}
+	}
+
+	var expires string
+	if cci == 0 {
+		expires = res.Header.Get("Expires")
+	}
+	iee := cci == 0 && isEmptyExpires(expires)
 	lm := res.Header.Get("Last-Modified")
 	etag := res.Header.Get("ETag")
-	expires := res.Header.Get("Expires")
-	iee := isEmptyExpires(expires)
 	if lm == "" && etag == "" && iee {
 		return &Response{Response: res}, err
 	}
 
 	var ed *time.Time
 	if !iee {
-		d, err := time.Parse(time.RFC1123, expires)
-		if err == nil {
-			ed = &d
+		if cci != 0 {
+			e := time.Now().Add(time.Duration(cci) * time.Second)
+			ed = &e
+		} else {
+			d, err := time.Parse(time.RFC1123, expires)
+			if err == nil {
+				ed = &d
+			}
 		}
 	}
 	body, _ := ioutil.ReadAll(res.Body)

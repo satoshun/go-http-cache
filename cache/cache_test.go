@@ -51,6 +51,38 @@ func TestNoHeader(t *testing.T) {
 	}
 }
 
+func TestCacheControl(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Cache-Control", "public, max-age=86400, public")
+		fmt.Fprint(w, "Hello, client")
+	}))
+	defer ts.Close()
+
+	c := NewMemoryCacheClient(&http.Client{})
+	_, err := c.GetWithCache(ts.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	r := c.r.(*MemoryRegistry)
+	if len(r.cache) != 1 {
+		t.Fatalf("expect len == 1, but actual %d", len(r.cache))
+	}
+	for _, v := range r.cache {
+		if v.Body == nil {
+			t.Fatal("body is nil")
+		}
+		if v.LastModified != "" {
+			t.Fatal("lastModified is not empty")
+		}
+		if v.Etag != "" {
+			t.Fatal("etag is not empty")
+		}
+		if v.Expires == nil {
+			t.Fatal("expires is not empty")
+		}
+	}
+}
 func TestLastModified(t *testing.T) {
 	n := time.Now().String()
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
