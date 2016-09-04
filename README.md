@@ -14,12 +14,12 @@ r, _ := http.NewRequest("GET", <url>, nil)
 res, err := c.DoWithCache(r)
 ```
 
-more detail [example/basic/main.go].
+more detail [example](example/basic/main.go).
 
 
 ## bonus
 
-cache checker cmd
+### cachestat: cache check command
 
 ```shell
 ## install
@@ -31,3 +31,7 @@ cachestat https://www.google.co.jp/images/nav_logo242.png https://www.google.com
 Not Modified - https://www.google.co.jp/images/nav_logo242.png
 Use Cache - https://www.google.com/textinputassistant/tia.png
 ```
+
+### implements on memcached
+
+[memcached sample](example/memcache).
