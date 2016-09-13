@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/bradfitz/gomemcache/memcache"
-	"github.com/satoshun/go-http-cache/cache"
+	"github.com/satoshun/go-http-cache"
 )
 
 var mc = memcache.New("127.0.0.1:11211")

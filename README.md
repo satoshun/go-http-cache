@@ -1,6 +1,6 @@
 # HTTP Cache for Go
 
-[![GoDoc](https://godoc.org/github.com/satoshun/go-http-cache/cache?status.svg)](https://godoc.org/github.com/satoshun/go-http-cache/cache) [![Build Status](https://travis-ci.org/satoshun/go-http-cache?branch=master)](https://travis-ci.org/satoshun/go-http-cache)
+[![GoDoc](https://godoc.org/github.com/satoshun/go-http-cache?status.svg)](https://godoc.org/github.com/satoshun/go-http-cache) [![Build Status](https://travis-ci.org/satoshun/go-http-cache?branch=master)](https://travis-ci.org/satoshun/go-http-cache)
 
 Reuse response body on Etag, Last-Modified, Expires and Cache-Control.
 

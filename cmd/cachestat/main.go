@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/satoshun/go-http-cache/cache"
+	"github.com/satoshun/go-http-cache"
 )
 
 func main() {
