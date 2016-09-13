@@ -19,7 +19,7 @@ more detail [example](example/basic/main.go).
 
 ## bonus
 
-### cachestat: cache check command
+### cachestat: check used cache or nor
 
 ```shell
 ## install
